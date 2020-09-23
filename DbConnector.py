@@ -1,5 +1,6 @@
 import mysql.connector as mysql
 import os
+from dotenv import load_dotenv
 
 
 class DbConnector:
@@ -14,13 +15,16 @@ class DbConnector:
     USER = "testuser" // This is the user you created and added privileges for
     PASSWORD = "test123" // The password you set for said user
     """
+    
+    BASEDIR = os.path.abspath(os.path.dirname(__file__))
+    load_dotenv(os.path.join(BASEDIR, '.env'))
 
     def __init__(self,
                  HOST="tdt4225-37.idi.ntnu.no",
                  DATABASE="db_geolife",
                  USER="group37",
-                 PASSWORD= os.getenv("PASSWORD")):
-        print(PASSWORD);
+                 PASSWORD= os.getenv('PASSWORD')):
+
         # Connect to the database
         try:
             self.db_connection = mysql.connect(host=HOST, database=DATABASE, user=USER, password=PASSWORD, port=3306)
