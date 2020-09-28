@@ -23,6 +23,9 @@ class DataUploader:
         self.ACTIVITY_ID = 1
         self.TRACKPOINT_ID = 1
 
+    def pack(self, data):
+        return [self.pack_data(value) for value in data]
+
     def pack_data(self, data):
         """
         Add apostrophes to string/date data
@@ -31,8 +34,29 @@ class DataUploader:
         @return: value with added apostrophes
         """
         if type(data) is bool or str(data).isnumeric():
-            return str(data)
-        return "'%s'" % str(data)
+            return data
+        return str(data)
+
+    def insert_data_bulk(self, table_name, data):
+        """
+        Bulk upload generic data to a table
+
+        @param table_name: table name
+        @param data: list of data maps
+        """
+        if len(data) == 0:
+            return
+
+        fields = ", ".join(data[0].keys())
+        value_placeholders = ", ".join(["%s" for f in data[0].keys()])
+        query = "INSERT INTO %s(%s) VALUES (%s)" % (table_name, fields, value_placeholders)
+
+        data = [tuple(self.pack(data_point.values())) for data_point in data]
+
+        chunk_size = 50000
+        data_chunks = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
+        for chunk in data_chunks:
+            self.cursor.executemany(query, chunk)
 
     def insert_data(self, table_name, data):
         """
@@ -189,9 +213,13 @@ class DataUploader:
             print(len(trackpoints))
 
         print("Uploading data")
-        self.insert_data("User", users)
-        self.insert_data("Activity", activities)
-        self.insert_data("TrackPoint", trackpoints)
+        self.insert_data_bulk("User", users)
+        print(" > Users done")
+        self.insert_data_bulk("Activity", activities)
+        print(" > Activities done")
+        self.insert_data_bulk("TrackPoint", trackpoints)
+        print(" > TrackPoints done")
+        self.cursor.close()
 
     def clear_db(self):
         """
