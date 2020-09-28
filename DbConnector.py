@@ -24,7 +24,6 @@ class DbConnector:
                  DATABASE="db_geolife",
                  USER="group37",
                  PASSWORD= os.getenv('PASSWORD')):
-
         # Connect to the database
         try:
             self.db_connection = mysql.connect(host=HOST, database=DATABASE, user=USER, password=PASSWORD, port=3306)
