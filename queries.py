@@ -39,7 +39,19 @@ class Queries:
             for i in range(len(coordinates)-1):
                 coord1 = coordinates[i]
                 coord2 = coordinates[i+1]
-                dist = distance(lat1=coord1[0], lat2=coord2[0], lon1=coord1[1], lon2=coord2[1])
+                dist = haversine(coord1, coord2)
                 total_distance += dist
 
         print("user 112 walked a total of {} km in 2008".format(round(total_distance,2)))
+
+    def q10(self):
+        # coordinates of the forbidden city. Round down to two decimals to get matches.
+        lat = round(39.916, 2)
+        lon = round(116.397, 2)
+
+        query = "SELECT DISTINCT user_id from Activity " \
+                "JOIN TrackPoint ON Activity.id=TrackPoint.activity_id " \
+                "WHERE ROUND(lat,2)={} AND ROUND(lon,2)={}".format(lat, lon)
+        self.cursor.execute(query)
+        users = [entry[0] for entry in self.cursor.fetchall()]
+        print("The following users have tracked an activity in the Forbidden City:", users)
