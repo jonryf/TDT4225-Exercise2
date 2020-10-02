@@ -1,5 +1,5 @@
 from DbConnector import DbConnector
-from util import distance
+from haversine import haversine
 
 class Queries:
     def __init__(self):
@@ -25,7 +25,9 @@ class Queries:
         print("The following users have taken a taxi:", rows)
 
     def q7(self):
-        query = "SELECT id FROM Activity WHERE user_id='112' AND transportation_mode='walk' AND (YEAR(start_date_time)=2008 OR YEAR(end_date_time)=2008)"
+        query = "SELECT id FROM Activity " \
+                "WHERE user_id='112' AND transportation_mode='walk' AND " \
+                "(YEAR(start_date_time)=2008 OR YEAR(end_date_time)=2008)"
         self.cursor.execute(query)
         activities = [result[0] for result in self.cursor.fetchall()]
 
