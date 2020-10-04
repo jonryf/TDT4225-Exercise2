@@ -57,6 +57,7 @@ class DataUploader:
         data_chunks = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
         for chunk in data_chunks:
             self.cursor.executemany(query, chunk)
+        self.db_connection.commit()
 
     def insert_data(self, table_name, data):
         """
@@ -211,6 +212,7 @@ class DataUploader:
                 for file_path in files:
                     trackpoints.extend(self.get_trackpoints(root + "/" + file_path, last_activities))
             print(len(trackpoints))
+
 
         print("Uploading data")
         self.insert_data_bulk("User", users)
