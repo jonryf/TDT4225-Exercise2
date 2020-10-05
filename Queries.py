@@ -77,10 +77,10 @@ class Queries:
         self.cursor.execute(query)
         altitudes = self.cursor.fetchall()
 
-        for k in range(len(altitudes)):
-            if altitudes[k][1] is None:
+        for i in range(len(altitudes)):
+            if altitudes[i][1] is None:
                 continue
-            altitudes[k] = (altitudes[k][0], float(altitudes[k][1]) * 0.3048)
+            altitudes[i] = (altitudes[i][0], float(altitudes[i][1]) * 0.3048)
 
         print("Top 20 users with meters gained in total altitude")
         print(tabulate(altitudes, headers=self.cursor.column_names))
@@ -98,13 +98,26 @@ class Queries:
         print("The following users have tracked an activity in the Forbidden City:", users)
 
     def q11(self):
-        #FIKS DETTE!!
-        query = "SELECT DISTINCT user_id, transportation_mode, COUNT(transportation_mode) " \
-                "FROM Activity GROUP BY user_id, transportation_mode ORDER BY user_id"
-        self.cursor.execute(query)
-        result = self.cursor.fetchall()
+        query = "SELECT user_id, transportation_mode as most_used_transportation_mode, MAX(count1) as count " \
+                "FROM (SELECT user_id, transportation_mode, COUNT(*) AS count1 FROM Activity GROUP BY user_id, transportation_mode) as a1 " \
+                "GROUP BY user_id, transportation_mode " \
+                "ORDER BY user_id, count DESC" \
 
-        print(tabulate(result, headers=self.cursor.column_names))
+        self.cursor.execute(query)
+        results = self.cursor.fetchall()
+
+        filtered_results = []
+        user_id = 0
+        for i in range(len(results)):
+            # when duplicates, takes the one that is ranked on top my the sql query
+            if user_id == results[i][0]:
+                continue
+
+            else:
+                user_id = results[i][0]
+                filtered_results.append((results[i][0], results[i][1]))
+
+        print(tabulate(filtered_results, headers=self.cursor.column_names))
 
 def main():
     program = None
