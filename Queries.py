@@ -68,38 +68,22 @@ class Queries:
         print("user 112 walked a total of {} km in 2008".format(round(total_distance,2)))
 
     def q8(self):
-        # fjern altitudes = -777
-        # finn top 20 users i forhold til altitude
-        # konverter fra feet til meter.
-        # This is wrong, need to calculate the distance between each data point!
-        # find a way to ask for nested-loop join (?)
-        # Se mer på LAG() -- kan være løsningen 
-        query = "SELECT altitude LAG(altitude, 1) OVER (TrackPoint.activity_id ORDER BY TrackPoint.id) alt FROM TrackPoint"
-            #"SELECT User.id, LAG(TrackPoint.altitude, 1) OVER ( " \
-             #   "PARTITION BY TrackPoint.activity_id " \
-              #  "ORDER BY TrackPoint.id) FROM " \
-               # "TrackPoint JOIN Activity ON TrackPoint.activity_id = Activity.id " \
-                #"JOIN User ON Activity.user_id = User.id AND TrackPoint.altitude != -777 GROUP BY User.id ORDER BY altitude DESC LIMIT 20" \
-
+        query = "SELECT Activity.user_id, SUM(TP1.altitude - (" \
+                "SELECT altitude FROM TrackPoint TP2 " \
+                "WHERE TP2.id = TP1.id - 1 AND TP2.altitude < TP1.altitude AND TP2.activity_id = TP1.activity_id " \
+                "ORDER BY id LIMIT 1)) altitude " \
+                "FROM TrackPoint TP1 JOIN Activity ON TP1.activity_id = Activity.id WHERE TP1.altitude != -777 AND altitude > 0 GROUP BY Activity.user_id ORDER BY altitude DESC LIMIT 20"
 
         self.cursor.execute(query)
-        result = self.cursor.fetchall()
+        altitudes = self.cursor.fetchall()
 
-        print(tabulate(result, headers=self.cursor.column_names)) 
+        for k in range(len(altitudes)):
+            if altitudes[k][1] is None:
+                continue
+            altitudes[k] = (altitudes[k][0], float(altitudes[k][1]) * 0.3048)
 
-        for k in range(len(result)):
-            result[k] = (result[k][0], float(result[k][1]) * 0.3048)
-
-
-        print(tabulate(result, headers=self.cursor.column_names))
-
-
-
-
-
-
-
-
+        print("Top 20 users with meters gained in total altitude")
+        print(tabulate(altitudes, headers=self.cursor.column_names))
 
     def q10(self):
         # coordinates of the forbidden city. Round down to two decimals to get matches.
@@ -112,6 +96,15 @@ class Queries:
         self.cursor.execute(query)
         users = [entry[0] for entry in self.cursor.fetchall()]
         print("The following users have tracked an activity in the Forbidden City:", users)
+
+    def q11(self):
+        #FIKS DETTE!!
+        query = "SELECT DISTINCT user_id, transportation_mode, COUNT(transportation_mode) " \
+                "FROM Activity GROUP BY user_id, transportation_mode ORDER BY user_id"
+        self.cursor.execute(query)
+        result = self.cursor.fetchall()
+
+        print(tabulate(result, headers=self.cursor.column_names))
 
 def main():
     program = None
@@ -131,11 +124,12 @@ def main():
         print("\nQuestion 7: ")
         #program.q7()
         print("\nQuestion 8: ")
-        program.q8()
+        #program.q8()
         print("\nQuestion 9: ")
         print("\nQuestion 10: ")
         program.q10()
         print("\nQuestion 11: ")
+        program.q11()
     except Exception as e:
         print("ERROR: failed to use database:", e)
     finally:
