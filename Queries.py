@@ -1,6 +1,7 @@
 from DbConnector import DbConnector
 from haversine import haversine
 from tabulate import tabulate
+import datetime
 
 class Queries:
     def __init__(self):
@@ -30,6 +31,14 @@ class Queries:
         avg = count_activities[0][0] / count_users[0][0]
         print("The average number of activites per user is: {}".format(round(avg, 0), float))
 
+    def q3(self):
+        """Find the top 20 users with the highest number of activities"""
+        query = "SELECT user_id, COUNT(*) AS Activities FROM Activity GROUP BY user_id ORDER BY Activities DESC LIMIT 20"
+        self.cursor.execute(query)
+        user_ids = self.cursor.fetchall()
+        print("The following users have the highest number of activities")
+        print(tabulate(user_ids, headers=self.cursor.column_names))
+
 
     def q4(self):
         query = "SELECT DISTINCT user_id FROM Activity " \
@@ -46,6 +55,31 @@ class Queries:
         rows = self.cursor.fetchall()
 
         print(tabulate(rows, headers=self.cursor.column_names))
+
+    def q6(self):
+        """Find the year with the most activities"""
+        years_activities = {}
+        years_hours = {}
+
+        for year in range(2007, 2011):
+            query_a = "SELECT COUNT(*) FROM Activity WHERE start_date_time LIKE '{}%'".format(year)
+            self.cursor.execute(query_a)
+            number_of_activities = self.cursor.fetchall()[0]
+            years_activities[number_of_activities] = year
+
+            query_b = "SELECT SUM(TIMESTAMPDIFF(HOUR, end_date_time, start_date_time)) FROM Activity WHERE start_date_time LIKE '{}%'".format(year)
+            self.cursor.execute(query_b)
+            number_of_activities = self.cursor.fetchall()[0]
+            years_hours[number_of_activities] = year
+
+        highest_no_of_activities = max(years_activities.keys())
+        year = years_activities[highest_no_of_activities]
+        print("The year with the most activities is " + str(year))
+
+        most_hours = max(years_hours.keys())
+        year = years_hours[most_hours]
+        print("The year with the most hours of activities is " + str(year))
+
 
     def q7(self):
         query = "SELECT id FROM Activity " \
@@ -84,6 +118,26 @@ class Queries:
 
         print("Top 20 users with meters gained in total altitude")
         print(tabulate(altitudes, headers=self.cursor.column_names))
+
+    def q9(self):
+        """Find all users who have invalid activities, and the number of invalid activities per user"""
+
+        time = "SET @timestamp='0000-00-00 00:00:00'"
+        activity_id = "SET @activity_id = 0"
+        self.cursor.execute(time)
+        self.cursor.execute(activity_id)
+
+        query = "SELECT tabell.user_id AS User, COUNT(DISTINCT tabell.current_id) AS 'Number of invalid Activities' " \
+                "FROM (SELECT user_id, @timestamp previous_timestamp, @timestamp:=date_time curr_timestamp, @activity_id previous_id, @activity_id:=Activity.id current_id " \
+                "FROM Activity JOIN TrackPoint ON (Activity.id = TrackPoint.activity_id)) AS tabell " \
+                "WHERE (TIMESTAMPDIFF(MINUTE, tabell.previous_timestamp, tabell.curr_timestamp) > 5 AND (tabell.current_id = tabell.previous_id))" \
+                "GROUP BY User"
+
+
+        self.cursor.execute(query)
+        results = self.cursor.fetchall()
+
+        print(tabulate(results, headers=self.cursor.column_names))
 
     def q10(self):
         # coordinates of the forbidden city. Round down to two decimals to get matches.
@@ -129,16 +183,19 @@ def main():
         print("\nQuestion 2: ")
         program.q2()
         print("\nQuestion 3: ")
+        program.q3()
         print("\nQuestion 4: ")
         program.q4()
         print("\nQuestion 5: ")
         program.q5()
         print("\nQuestion 6: ")
+        program.q6()
         print("\nQuestion 7: ")
-        #program.q7()
+        program.q7()
         print("\nQuestion 8: ")
-        #program.q8()
+        program.q8()
         print("\nQuestion 9: ")
+        program.q9()
         print("\nQuestion 10: ")
         program.q10()
         print("\nQuestion 11: ")
